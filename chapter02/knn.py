@@ -1,108 +1,62 @@
-'''
-Created on Sep 16, 2010
-kNN: k Nearest Neighbors
-
-Input:      inX: vector to compare to existing dataset (1xN)
-            dataSet: size m data set of known vectors (NxM)
-            labels: data set labels (1xM vector)
-            k: number of neighbors to use for comparison (should be an odd number)
-            
-Output:     the most popular class label
-
-@author: pbharrin
-'''
-from numpy import *
+import numpy as np
 import operator
-from os import listdir
-
-def classify0(inX, dataSet, labels, k):
-    dataSetSize = dataSet.shape[0]
-    diffMat = tile(inX, (dataSetSize,1)) - dataSet
-    sqDiffMat = diffMat**2
-    sqDistances = sqDiffMat.sum(axis=1)
-    distances = sqDistances**0.5
-    sortedDistIndicies = distances.argsort()     
-    classCount={}          
-    for i in range(k):
-        voteIlabel = labels[sortedDistIndicies[i]]
-        classCount[voteIlabel] = classCount.get(voteIlabel,0) + 1
-    sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
-    return sortedClassCount[0][0]
+import matplotlib.pyplot as plot
 
 def createDataSet():
-    group = array([[1.0,1.1],[1.0,1.0],[0,0],[0,0.1]])
+    group = np.array([[1.0,1.1],[1.0,1.0],[0,0],[0,0.1]])
     labels = ['A','A','B','B']
     return group, labels
 
-def file2matrix(filename):
-    fr = open(filename)
-    numberOfLines = len(fr.readlines())         #get the number of lines in the file
-    returnMat = zeros((numberOfLines,3))        #prepare matrix to return
-    classLabelVector = []                       #prepare labels return   
-    fr = open(filename)
-    index = 0
-    for line in fr.readlines():
-        line = line.strip()
-        listFromLine = line.split('\t')
-        returnMat[index,:] = listFromLine[0:3]
-        classLabelVector.append(int(listFromLine[-1]))
-        index += 1
-    return returnMat,classLabelVector
-    
-def autoNorm(dataSet):
-    minVals = dataSet.min(0)
-    maxVals = dataSet.max(0)
-    ranges = maxVals - minVals
-    normDataSet = zeros(shape(dataSet))
-    m = dataSet.shape[0]
-    normDataSet = dataSet - tile(minVals, (m,1))
-    normDataSet = normDataSet/tile(ranges, (m,1))   #element wise divide
-    return normDataSet, ranges, minVals
-   
-def datingClassTest():
-    hoRatio = 0.50      #hold out 10%
-    datingDataMat,datingLabels = file2matrix('datingTestSet2.txt')       #load data setfrom file
-    normMat, ranges, minVals = autoNorm(datingDataMat)
-    m = normMat.shape[0]
-    numTestVecs = int(m*hoRatio)
-    errorCount = 0.0
-    for i in range(numTestVecs):
-        classifierResult = classify0(normMat[i,:],normMat[numTestVecs:m,:],datingLabels[numTestVecs:m],3)
-        print("the classifier came back with: %d, the real answer is: %d" % (classifierResult, datingLabels[i]))
-        if (classifierResult != datingLabels[i]): errorCount += 1.0
-    print ("the total error rate is: %f" % (errorCount/float(numTestVecs)))
-    print (errorCount)
-    
-def img2vector(filename):
-    returnVect = zeros((1,1024))
-    fr = open(filename)
-    for i in range(32):
-        lineStr = fr.readline()
-        for j in range(32):
-            returnVect[0,32*i+j] = int(lineStr[j])
-    return returnVect
+def classify0(inX,dataset,labels,k):
+    datasetsize=dataset.shape[0]
+    diffmat=np.tile(inX,(datasetsize,1))-dataset
+    distances=(diffmat**2).sum(axis=1)**0.5
+    sorted_distindicies=distances.argsort()
+    classcount={}
+    for i in range(k):
+        voteilabel=labels[sorted_distindicies[i]]
+        classcount[voteilabel]=classcount.get(voteilabel,0)+1
+    sortedclasscount=sorted(classcount.items(),key=operator.itemgetter(1),reverse=True)
+    return sortedclasscount[0][0]
 
-def handwritingClassTest():
-    hwLabels = []
-    trainingFileList = listdir('trainingDigits')           #load the training set
-    m = len(trainingFileList)
-    trainingMat = zeros((m,1024))
-    for i in range(m):
-        fileNameStr = trainingFileList[i]
-        fileStr = fileNameStr.split('.')[0]     #take off .txt
-        classNumStr = int(fileStr.split('_')[0])
-        hwLabels.append(classNumStr)
-        trainingMat[i,:] = img2vector('trainingDigits/%s' % fileNameStr)
-    testFileList = listdir('testDigits')        #iterate through the test set
-    errorCount = 0.0
-    mTest = len(testFileList)
-    for i in range(mTest):
-        fileNameStr = testFileList[i]
-        fileStr = fileNameStr.split('.')[0]     #take off .txt
-        classNumStr = int(fileStr.split('_')[0])
-        vectorUnderTest = img2vector('testDigits/%s' % fileNameStr)
-        classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
-        print("the classifier came back with: %d, the real answer is: %d" % (classifierResult, classNumStr))
-        if (classifierResult != classNumStr): errorCount += 1.0
-    print ("\nthe total number of errors is: %d" % errorCount)
-    print ("\nthe total error rate is: %f" % (errorCount/float(mTest)))
+def file2matrix(filename):
+    with open(filename) as f:
+        numberoflines=len(f.readlines())
+    returnmat=np.zeros((numberoflines,3))
+    classlabelvector=[]
+    with open(filename) as f:
+        filelines=f.readlines()
+    index=0
+    for line in filelines:
+        line = line.strip()
+        listfromline=line.split('\t')
+        returnmat[index,:]=listfromline[0:3]
+        classlabelvector.append(int(listfromline[-1]))
+        index+=1
+    return returnmat,classlabelvector
+
+def autonorm(dataset):
+    minvals=dataset.min(0)
+    maxvals=dataset.max(0)
+    ranges=maxvals-minvals
+    normdata=np.zeros(np.shape(dataset))
+    normdata=dataset-np.tile((minvals,(dataset.shape[0],1)))
+    normdata/=np.tile((ranges,(dataset.shape[0],1)))
+    return normdata,ranges,minvals
+
+def datingclasstest():
+    ratio=0.5
+    dataingdatamat,datinglables=file2matrix('datingTestSet2.txt')
+    normmat,ranges,minval=autonorm(dataingdatamat)
+    m=normmat.shape[0]
+    numoftestvecs=int(ratio*m)
+    errorcount=0
+    for i in range(numoftestvecs):
+        classifierresult=classify0(normmat[i,:],normmat[numoftestvecs:m,:],datinglables[numoftestvecs:m],3)
+        print("the classifier came back with: %d, the real answer is: %d" % (classifierresult,datinglables[i]))
+
+
+# dataset,lables=createDataSet()
+# classify0([0,0],dataset,lables,3)
+# plot.scatter(dataset[:,0],dataset[:,1])
+# plot.show()
