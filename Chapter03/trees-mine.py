@@ -15,14 +15,14 @@ def create_dataset():
 
 
 def calc_shannonent(dataset):
-    nam_entries = len(dataset)
+    num_entries = len(dataset)
     label_counts = {}
     for vec in dataset:
         current_label = vec[-1]
         label_counts[current_label] = label_counts.get(current_label, 0) + 1
     shannonent = 0
     for k, v in label_counts.items():
-        prob = v / nam_entries
+        prob = v / num_entries
         shannonent -= prob * log(prob, 2)
     return shannonent
 
